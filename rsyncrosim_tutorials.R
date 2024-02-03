@@ -106,3 +106,37 @@ myScenario = scenario(ssimObject = myProject, scenario = "My first scenario")
 # Check Scenario
 myScenario
 
+
+### View model inputs using datasheet() ###
+
+# Each SyncroSim Library contains multiple Datasheets
+# Datasheet is a table of data stored in a Library and represent the input and output data for Transformers
+# Datasheets have a scope: either Library, Project, or Scenario
+
+# Datasheets with:
+# Library scope - represent data that is specified only once for the entire Library (such as location of backup folder)
+# Project scope - represent data that are shared over all Scenarios in a Project 
+# Scenario scope - represent data that must be specified for each generated Scenario
+
+# View Datasheets of varying scopes using datasheet() function
+
+# View all Datasheets associated with a Library, Project, or Scenario
+datasheet(myScenario)
+
+# To see more info on each Datasheet (like scope of Datasheet or if it only accepts a single row of data) we can set optional = TRUE
+datasheet(myScenario, optional = TRUE)
+
+# Output shows that RunControl Datasheet and InputDatasheet only accept single row of data (i.e., isSingle = TRUE)
+
+# To view specific Datasheet rather than just a dataframe of available Datasheets, set the name parameter in the datasheet() fn
+# syntax is "<name of package>_<name of Datasheet>"
+# from list of datasheets, we can see there are 3 Datasheets associated with helloworldTime package
+
+# View the input Datasheet for the Scenario
+datasheet(myScenario, name = "helloworldTime_InputDatasheet")
+# we are viewing the contents of a SyncroSim Datasheet as an R dataframe
+
+
+### Configure model inputs using datasheet() and addRow() ###
+
+
