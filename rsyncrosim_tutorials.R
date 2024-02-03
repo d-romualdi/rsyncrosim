@@ -269,3 +269,38 @@ head(myOutputDataframe)
 
 
 ### Working with multiple Scenarios ###
+
+# May want to test multiple alternative Scenarios that have slightly different inputs
+# To save time, you can copy a Scenario that you've already made, give it a different name, and modify the inputs
+# To copy a completed Scenario, use the scenario() fn with the sourceScenario argument set to the name of the Scenario you want to copy
+
+# Check which Scenarios you currently have in your Library
+scenario(myLibrary)['Name']
+
+# Create a new Scenario as a copy of an exisiting Scenario
+myNewScenario <- scenario(ssimObject = myProject, 
+                          scenario = "My second scenario",
+                          sourceScenario = myScenario)
+
+# Make sure this new Scenario has been added to the Library 
+scenario(myLibrary)['Name']
+
+# To edit the new Scenatio, we need to load the contents of the input Datasheet and assign it to a new R df using the datasheet() fn
+# We will still set the empty argument to TRUE so that instead of getting the same values from the existing Scenario, we can start with an empty df again
+
+# Load empty input Datasheets as an R df
+myNewInputDataframe <- datasheet(myNewScenario,
+                                 name = "helloworldTime_InputDatasheet",
+                                 empty = TRUE)
+# Check that we have an empty df
+str(myNewInputDataframe)
+
+# Add our df of values the same way we did before using addRow(
+
+# Create input data and add it to the input data frame
+newInputRow <- data.frame(m = 4, b = 10)
+myNewInputDataframe <- addRow(myNewInputDataframe, newInputRow)
+
+# View new inputs
+myNewInputDataframe
+
