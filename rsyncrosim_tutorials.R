@@ -139,4 +139,38 @@ datasheet(myScenario, name = "helloworldTime_InputDatasheet")
 
 ### Configure model inputs using datasheet() and addRow() ###
 
+# Currently the input Scenario Datasheets are empty!
+# Add values to input Datasheet (InputDatasheet) to run our model
+
+# First, assign the input Datasheet to a new data frame variable
+
+# Assign contents of the input Datasheet to an R data frame
+myInputDataframe <- datasheet(myScenario, 
+                              name = "helloworldTime_InputDatasheet")
+
+# Check columns that need input values and the type of values these columns need using str() base R fn
+# i.e., string, numercial, logical
+
+# Check columns of input df
+str(myInputDataframe)
+
+# Input Datasheet requires 2 values
+# m : slope of linear equation
+# b : intercept of the linear equation
+
+# Now, update the input dataframe using addRow()
+# addRow() takes the targetDataframe as the first value (in this case, our input data frame that we want to update)
+# and the data frame of new rows to append to the input df as the second value 
+
+# NOTE: we know that the input Datasheet only accepts a single row of values, so we can only have one value each for slope(m) and intercept(b)
+
+# Create input data and add it to input data frame
+myInputRow <- data.frame(m = 3, b = 10)
+myInputDataframe <- addRow(myInputDataframe, myInputRow)
+
+# Check values
+myInputDataframe
+
+
+
 
