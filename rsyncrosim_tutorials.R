@@ -172,5 +172,89 @@ myInputDataframe <- addRow(myInputDataframe, myInputRow)
 myInputDataframe
 
 
+### Saving modifications to Datasheets using saveDatasheet() ###
 
+# we can save a Datasheet at the Library, Project, or Scenario level
+
+# Save input R data frame to a SyncroSim Datasheet at the Scneario level
+saveDatasheet(ssimObject = myScenario, data = myInputDataframe, 
+              name = "helloworldTime_InputDatasheet")
+## Datasheet <helloworldTime_InputDatasheet> saved
+
+
+### Configuring the RunControl Datasheet ###
+
+# we need to configure another Datasheet for our package to run
+# RunControl Datasheet provides info about how many time steps to use in the model
+# Here, we set minimum and maximum time steps for our model
+
+# Add this information to an R data frame and add it to Run Control Datasheet using addRow()
+# We need to specify the following 2 columns:
+# MinimumTimestep: the starting point of the simulation
+# MaximumTimestep: the end time point of the simulation
+
+# Assign contents of the run control Datasheet to an R df
+runSettings <- datasheet(myScenario, name = "helloworldTime_RunControl")
+
+# Check coluns of the run control df
+str(runSettings)
+
+# Create run control data and add it to the run control df
+runSettingsRow <- data.frame(MinimumTimestep = 1,
+                            MaximumTimestep = 10)
+runSettings <- addRow(runSettings, runSettingsRow)
+
+# Check values
+runSettings
+
+# Save run control R df to a SyncroSum Datasheet
+saveDatasheet(ssimObject = myScenario, data = runSettings,
+              name = "helloworldTime_RunControl")
+## Datasheet <helloworldTime_RunControl> saved
+
+
+
+### Run Scenarios ###
+
+### Setting run parameters with run() ###
+
+# Starting with Scenario we created in "My first scenario"
+
+# Run first Scenario we created
+myResultScenario <- run(myScenario)
+## [1] "Running scenario [1] My first scenario"
+
+
+### Checking the run log with runLog() ###
+
+# Get run details for the first reult Scenario 
+runLog(myResultScenario)
+
+
+### View Results ###
+
+### Results Scenarios ###
+
+# A Results Scenario is generated when a Senario is run and is an exact copy of the original Scenario (i.e., contains the original Scenario's values for all input Datasheets)
+# Results Scenario is passed to the Transformer in order to generate model output, with the results of the Transformer's calculations then being added to the Results Scenario as output Datasheets
+# Results Scenario contains both the output of the run, and a snapshot record of all model inputs
+
+# Check current Scenarios in Library using scenario() function 
+scenario(myLibrary)
+
+# The first Scenario is our original Scenario, and the second is the Results Scenario with a time, and date stamp of when it was run
+# We can also see if the Scenario is a result or not (i.e., isResult = NO/YES)
+
+# We can also look at how the Datasheets differ between the Results Scenario and the original Scenario
+
+# Look at original Scenario Datasheets
+datasheet(myScenario, optional = TRUE)
+
+# Look at Results Scenario Datasheets
+datasheet(myResultScenario, optional = TRUE)
+
+# looking at data column, the OuputDatasheet does not contain any data (FALSE) in the original Scenario, but does (TRUE) in the Results Scenario
+
+
+### Viewing results with datasheet() ###
 
