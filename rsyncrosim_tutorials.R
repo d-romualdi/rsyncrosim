@@ -258,3 +258,14 @@ datasheet(myResultScenario, optional = TRUE)
 
 ### Viewing results with datasheet() ###
 
+# View the output Datasheet added to Results Scenario when it was run
+# Load the results table using datasheet() and setting the name parameter to the Datasheet with new data added
+
+# Results of first Scenario
+myOutputDataframe <- datasheet(myResultScenario,
+                               name = "helloworldTime_OutputDatasheet")
+# view results table
+head(myOutputDataframe)
+
+
+### Working with multiple Scenarios ###
