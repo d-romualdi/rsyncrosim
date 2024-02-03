@@ -304,3 +304,100 @@ myNewInputDataframe <- addRow(myNewInputDataframe, newInputRow)
 # View new inputs
 myNewInputDataframe
 
+# Save updated df to SyncroSim Datasheet using saveDatasheet()
+
+# Save R df to SyncroSim Datasheet
+saveDatasheet(ssimObject = myNewScenario, data = myNewInputDataframe,
+              name = "helloworldTime_InputDatasheet")
+## Datasheet <helloworldTime_InputDatasheet> saved
+
+# Keep RunControl Datasheet the same as the first Scenario
+
+
+### Run Scenarios ###
+
+# Now we have 2 SyncroSim Scenarios
+# We can run all Scenarios in the Project at once by telling run() which Project to use and including a vector of Scenarios in the scenario argument
+
+# Run all Scenarios
+myResultScenarioAll <- run(myProject, 
+                           scenario = c("My first scenario",
+                                        "My second scenario"))
+
+
+### View Results ###
+
+# Output that is returned from running many Scenarios at once is actually a list of result Scenario objects
+# To view results, we can use datasheet() fn
+# Just need to index for the result Scenario object we are interested in
+
+datasheet(myResultScenarioAll[2], name = "OutputDatasheet")
+
+
+### Identifying the parent Scenario of a Results Scenario using parentId() ###
+
+# If you have many alternative Scenarios and many Result Scenarios, you can always find the parent Scenario that was run in order to generate the Results Scenario
+# using the parentId() fn
+
+parentId(myResultScenarioAll[[1]])
+parentId(myResultScenarioAll[[2]])
+
+
+
+### Access model metadata ###
+
+### Getting Library information using info() ###
+
+info(myLibrary)
+
+### Getting information of an ssimObject ###
+
+# Following functions can be used to get info about a Library, Project, or Scenario:
+# name() : used to retrieve or assign a name
+# owner() : used to retrieve or assign an owner
+# dateModified() : used to retrieve the date when the last changes were made
+# readOnly() : used to retrieve or assign the read-only status
+# filepath() : retrieve local file path
+# description() : retrieve or add a description
+
+# You can also find ID numbers of Projects of Scenarios using the folowing fns:
+# projectID() : used to retrieve the Project identification number
+# scenarioID() : used to retrieve the Scenario identification number
+
+### Backup your Library ###
+
+# May want to backup the inputs and results into zipped .backup subfolder
+# First, modify the Library Backup Datasheet to allow backup of model outputs
+# Since Datasheet is part of the built-in SyncroSim core, the name of the Datasheet has the prefix "core"
+# We can get a list of all the core Datasheets with a Library scope using the datasheet() fn
+
+# Find all core Library-scoped Datasheets
+datasheet(myLibrary, summary = "CORE")
+
+# Get the current values for the Library's Backup Datasheet
+myDataframe <- datasheet(myLibrary, name = "core_Backup")
+
+# View current values for the Library's Backup Datasheet
+myDataframe
+
+# Add output to the Library's Backup Datasheet and save
+myDataframe$IncludeOutput <- TRUE
+saveDatasheet(myLibrary, data = myDataframe, name = "core_Backup")
+
+## Datasheet <core_Backup> saved
+
+# Check to make sure IncludeOutput is now TRUE
+datasheet(myLibrary, "core_Backup")
+
+# Now you can use backup() fn to backup Library, Project, or Scenario
+backup(myLibrary)
+
+## Backup complete.
+
+### rsyncrosim and the SyncroSim Windows User Interface ###
+
+# Can use rsyncrosim and SyncroSim Windows UI at the same time
+# Can run Scenarios in rsyncrosim and plot outputs in SyncroSim UI as you go
+# To sync the Library in the UI with the latest changes in rsyncrosim code, click the refresh icon (top left corner) in the UI
+
+# --- FIN --- #
