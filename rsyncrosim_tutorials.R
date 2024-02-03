@@ -32,7 +32,8 @@ mySession # Displaying Session object
 
 version(mySession) #2.5.6
 
-### Installing SyncroSim Packages using addPackages()
+
+### Installing SyncroSim Packages using addPackages() ###
 
 # get list of installed packages
 package()
@@ -45,4 +46,23 @@ head(availablePackages)
 addPackage("helloworldTime")
 
 package() #checking if helloworldTime is included in package list now - it is!
+
+# to update package use: updatePackage()
+# to remove package use: removePackage()
+
+
+### Create a model workflow ###
+
+# Library > Projects > Scenarios
+
+### Create new library using ssimLibrary() ###
+
+# a library is a file (with .ssm extension) that stores all model inputs and outputs
+
+# Create new Library 
+myLibrary <- ssimLibrary(name = "helloworldLibrary.ssim",
+                         session = mySession,
+                         package = "helloworldTime")
+# Check Library info
+myLibrary
 
