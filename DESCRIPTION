@@ -41,9 +41,8 @@ Suggests:
     testthat (>= 3.0.0),
     ggplot2,
     Rcpp,
-    rmarkdown,
-    raster
-SystemRequirements: SyncroSim (>=2.3.10)
+    rmarkdown
+SystemRequirements: SyncroSim (>=3.0.0)
 Collate: 
     'AAAClassDefinitions.R'
     'addPackage.R'
@@ -101,12 +100,10 @@ Collate:
     'saveDatasheet.R'
     'silent.R'
     'ssimEnvironment.R'
-    'ssimUpdate.R'
     'uninstallPackage.R'
-    'updatePackage.R'
     'useConda.R'
     'version.R'
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 URL: <https://syncrosim.github.io/rsyncrosim/>
 BugReports: https://github.com/syncrosim/rsyncrosim/issues/
 Config/testthat/edition: 3

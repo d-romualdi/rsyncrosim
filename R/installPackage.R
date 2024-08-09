@@ -12,8 +12,11 @@ NULL
 #' package file (ends in ".ssimpkg"). The list of SyncroSim packages can be 
 #' found \href{https://syncrosim.com/packages/}{here}.
 #'
-#' @param name character string.  The name or file path of the package to 
+#' @param packages character string. The name or file path of the package to 
 #' install
+#' @param versions character string. The packages version(s) to install if
+#' installing a package from the server. If \code{NULL} then installs the 
+#' latest version 
 #' @param session \code{\link{Session}} object. If \code{NULL} (default),
 #' \code{session()} will be used
 #' 
@@ -27,67 +30,119 @@ NULL
 #' mySession <- session()
 #' 
 #' # Install package from the package server
-#' installPackage("stsim", session = mySession)
+#' installPackage(packages="stsim", versions="4.0.1", session = mySession)
 #' 
 #' # Install package using a local file path
 #' installPackage("c:/path/to/stsim.ssimpkg")
 #' }
 #' 
 #' @export
-setGeneric("installPackage", function(name, session = NULL) standardGeneric("installPackage"))
+setGeneric("installPackage", 
+           function(packages, versions = NULL, session = NULL) standardGeneric("installPackage"))
 
 #' @rdname installPackage
-setMethod("installPackage", signature(session = "character"), function(name, session) {
+setMethod("installPackage", signature(session = "character"), 
+          function(packages, versions, session) {
   return(SyncroSimNotFound(session))
 })
 
 #' @rdname installPackage
-setMethod("installPackage", signature(session = "missingOrNULL"), function(name, session) {
+setMethod("installPackage", signature(session = "missingOrNULL"), 
+          function(packages, versions, session) {
   session <- .session()
-  return(installPackage(name, session))
+  return(installPackage(packages, versions, session))
 })
 
 #' @rdname installPackage
-setMethod("installPackage", signature(session = "Session"), function(name, session) {
+setMethod("installPackage", signature(session = "Session"), 
+          function(packages, versions, session) {
+            
   success <- FALSE
   progName <- "SyncroSim.PackageManager.exe"
   
-  if (is.null(name)) {
+  if (is.null(packages)) {
     stop("A package name or file path is required")
   }
   
-  if (grepl(".ssimpkg", name)) {
-    if (!file.exists(name)) {
-      tt <- paste0("Cannot find file: ", name)
+  if (!is.null(versions) && (length(packages) != length(versions))){
+    stop("The number of versions specified must match the number of packages.")
+  }
+  
+  # Install from file
+  if (length(packages) == 1 && grepl(".ssimpkg", packages)) {
+    if (!file.exists(packages)) {
+      tt <- paste0("Cannot find file: ", packages)
     } else {
-      tt <- command(args = list(finstall = name), session, program = progName)
+      tt <- command(args = list(finstall = packages), session, program = progName)
       if (tt == "saved"){
         success <- TRUE
-        tt <- paste0("Package installed from file <", name, ">")
+        tt <- paste0("Package installed from file <", packages, ">")
       }
     }
-  } else if (dir.exists(name)){
-    if (!file.exists(file.path(name, "package.xml"))){
+    
+    return(invisible(success))
+  } 
+  
+  # Install from folder
+  if (length(packages) == 1 && dir.exists(packages)){
+    if (!file.exists(file.path(packages, "package.xml"))){
       tt <- paste0("Package folder is not valid")
     }
-    tt <- command(args = list(xinstall = name), session, program = progName)
+    tt <- command(args = list(xinstall = packages), session, program = progName)
     if (tt[1] == "saved"){
       success <- TRUE
-      tt <- paste0("Package installed from folder <", name, ">")
+      tt <- paste0("Package installed from folder <", packages, ">")
     }
-  } else {
-    pkgs <- packages(session)
-    if (is.element(name, pkgs$name)) {
-      tt <- (paste0("Package <", name, "> is already installed"))
-    } else {
-      tt <- command(args = list(install = name), session, program = progName)
-      if (tt[1] == "saved"){
-        tt <- paste0("Package <", name, "> installed")
-        success <- TRUE
+    
+    return(invisible(success))
+  } 
+  
+  # Install from server
+  availSessionPkgs <- .packages(session, installed = F)
+  installedSessionPkgs <- .packages(session, installed = T)
+  retList <- list()
+  
+  for (i in seq(length.out = length(packages))) {
+    cPkg <- packages[i]
+    
+    cVer <- "0.0.0"
+    if (is.null(versions)){
+      pkgVersions <- availSessionPkgs[availSessionPkgs$name == cPkg, ]$version
+      if (length(pkgVersions) > 0){
+        cVer <- pkgVersions[length(pkgVersions)]
       }
+    } else {
+      cVer <- versions[i]
     }
+    
+    sessPkgRow <- installedSessionPkgs[
+      ((installedSessionPkgs$name == cPkg) & (installedSessionPkgs$version == cVer)),]
+    
+    if (nrow(sessPkgRow) > 0) {
+      print(paste0("Package ", cPkg, " v", cVer, " is already installed."))
+      retList[[cPkg]] <- FALSE
+      next
+    }
+  
+    sessPkgRow <- availSessionPkgs[
+      ((availSessionPkgs$name == cPkg) & (availSessionPkgs$version == cVer)), ]
+    
+    if (nrow(sessPkgRow) == 0) {
+      print(paste0("Package ", cPkg, " v", cVer, " is not available from package server."))
+      retList[[cPkg]] <- FALSE
+      next
+    }
+    
+    tt <- command(list(install = cPkg, version = cVer), session, program = progName)
+    
+    if (tt[1] == "saved"){
+      message(paste0("Package <", cPkg, " v", cVer, "> installed"))
+      retList[[cPkg]] <- TRUE
+    } else {
+      message(tt)
+      retList[[cPkg]] <- FALSE
+    }
+    
+    return(invisible(retList))
   }
-
-  message(tt)
-  return(invisible(success))
 })

@@ -18,24 +18,24 @@ NULL
 #'
 #' Otherwise, for each element in name a Datasheet is returned as follows:
 #' \itemize{
-#'   \item {If \code{lookupsAsFactors=TRUE} (default): }{Each column is given the correct 
+#'   \item If \code{lookupsAsFactors=TRUE} (default): Each column is given the correct 
 #'          data type, and dependencies returned as factors with allowed values (levels). 
-#'          A warning is issued if the lookup has not yet been set.}
-#'   \item {If \code{empty=TRUE}: }{Each column is given the correct data type. Fast (1 less 
-#'          console command)}.
-#'   \item {If \code{empty=FALSE} and \code{lookupsAsFactors=FALSE}: }{Column types are not checked, 
-#'          and the optional argument is ignored. Fast (1 less console command).}
-#'   \item {If SsimObject is a list of \code{\link{Scenario}} or \code{\link{Project}} 
+#'          A warning is issued if the lookup has not yet been set.
+#'   \item If \code{empty=TRUE}: Each column is given the correct data type. Fast (1 less 
+#'          console command).
+#'   \item If \code{empty=FALSE} and \code{lookupsAsFactors=FALSE}: Column types are not checked, 
+#'          and the optional argument is ignored. Fast (1 less console command).
+#'   \item If SsimObject is a list of \code{\link{Scenario}} or \code{\link{Project}} 
 #'          objects (output from \code{\link{run}}, \code{\link{Scenario}} or 
-#'          \code{\link{Project}}): }{Adds ScenarioId/ProjectId column if appropriate.}
-#'   \item {If Scenario/Project is a vector: }{Adds ScenarioId/ProjectId column 
-#'          as necessary.}
-#'   \item {If requested Datasheet has Scenario scope and contains info from more 
-#'          than one Scenario: }{ScenarioId/ScenarioName/ScenarioParent columns 
-#'          identify the Scenario by \code{name}, \code{id}, and \code{parent} (if a result Scenario)}.
-#'   \item {If requested Datasheet has Project scope and contains info from more 
-#'          than one Project: }{ProjectId/ProjectName columns identify the Project 
-#'          by \code{name} and \code{id}}
+#'          \code{\link{Project}}): Adds ScenarioId/ProjectId column if appropriate.
+#'   \item If Scenario/Project is a vector: Adds ScenarioId/ProjectId column 
+#'          as necessary.
+#'   \item If requested Datasheet has Scenario scope and contains info from more 
+#'          than one Scenario: ScenarioId/ScenarioName/ScenarioParent columns 
+#'          identify the Scenario by \code{name}, \code{id}, and \code{parent} (if a result Scenario).
+#'   \item If requested Datasheet has Project scope and contains info from more 
+#'          than one Project: ProjectId/ProjectName columns identify the Project 
+#'          by \code{name} and \code{id}
 #' }
 #'
 #' @param ssimObject \code{\link{SsimLibrary}}, \code{\link{Project}},
@@ -62,7 +62,7 @@ NULL
 #' @param empty logical. If \code{TRUE} returns empty data.frames for each 
 #'     Datasheet. Ignored if \code{summary=TRUE} Default is \code{FALSE}
 #' @param filterColumn character string. The column to filter a Datasheet by. 
-#'     (e.g. "TransitionGroupID"). Note that to use the filterColumn argument,
+#'     (e.g. "TransitionGroupId"). Note that to use the filterColumn argument,
 #'     you must also specify the filterValue argument. Default is \code{NULL}
 #' @param filterValue character string or integer. The value to filter the 
 #'     filterColumn by. To use the filterValue argument, you must also specify
@@ -81,9 +81,10 @@ NULL
 #' @param fastQuery logical.  If \code{TRUE}, the request is optimized for 
 #'     performance.  Ignored if combined with summary, empty, or 
 #'     \code{\link{sqlStatement}} flags. Default is \code{FALSE}
-#' @param returnScenarioInfo logical. If \code{TRUE}, returns the Scenario ID,
-#'     Scenario Name, Parent ID, and Parent Name columns with the Datasheet.
-#'     Default is \code{FALSE}
+#' @param returnScenarioInfo logical. If \code{TRUE}, returns the Scenario Id,
+#'     Scenario Name, Parent Id, and Parent Name columns with the 
+#'     Scenario-scoped Datasheet. Does nothing if the Datasheet exists at the
+#'     Library or Project level. Default is \code{FALSE}
 #' @param returnInvisible logical. If \code{TRUE}, returns columns that are 
 #'     invisible in the User Interface (i.e., are only used and populated
 #'     internally by SyncroSim or the SyncroSim Package). Default is \code{FALSE}
@@ -184,19 +185,24 @@ setMethod("datasheet",
                    filterColumn, filterValue, lookupsAsFactors, sqlStatement, 
                    includeKey, forceElements, fastQuery, returnScenarioInfo,
                    returnInvisible, rawValues, verbose) {
+
   cScn <- ssimObject[[1]]
   x <- NULL
+  
   if (is(cScn, "Scenario")) {
     x <- getIdsFromListOfObjects(ssimObject, expecting = "Scenario", scenario = scenario, project = project)
     scenario <- x$objs
     project <- NULL
   }
+  
   if (is(cScn, "Project")) {
     x <- getIdsFromListOfObjects(ssimObject, expecting = "Project", scenario = scenario, project = project)
     project <- x$objs
     scenario <- NULL
   }
+  
   ssimObject <- x$ssimObject
+  
   if (is.null(ssimObject)) {
     stop("Expecting ssimObject to be an SsimLibrary/Project/Scenario, or a list of Scenarios/Projects.")
   }
@@ -231,6 +237,7 @@ setMethod("datasheet",
                    filterColumn, filterValue, lookupsAsFactors, sqlStatement, 
                    includeKey, forceElements, fastQuery, returnScenarioInfo,
                    returnInvisible, rawValues, verbose) {
+            
   temp <- NULL
   ProjectId <- NULL
   ScenarioId <- NULL
@@ -241,18 +248,29 @@ setMethod("datasheet",
   xProjScn <- .getFromXProjScn(ssimObject, project, scenario, returnIds = TRUE, convertObject = FALSE, complainIfMissing = TRUE)
   IDColumns <- c("ScenarioId", "ProjectId")
   
+  if (is(ssimObject, "SsimLibrary")){
+    scopeDS <- "library"
+  } else if (is(ssimObject, "Project")){
+    scopeDS <- "project"
+  } else {
+    scopeDS <- "scenario"
+  }
+  
   if (is(xProjScn, "SsimLibrary")) {
     x <- xProjScn
     pid <- NULL
     sid <- NULL
+    scopeDS <- "library"
   } else {
     x <- xProjScn$ssimObject
     pid <- xProjScn$project
     sid <- xProjScn$scenario
+    
     if (!is.null(sid) & is.null(pid)) {
       pid <- subset(xProjScn$scenarioSet, is.element(ScenarioId, sid))$ProjectId
     }
   }
+  
   # now have valid pid/sid vectors and x is library.
   if (!is.null(name)) {
     for (i in seq_along(name)) {
@@ -278,22 +296,29 @@ setMethod("datasheet",
   # if summary, don't need to bother with project/scenario ids: sheet info doesn't vary among project/scenarios in a project
   if (summary == TRUE) {
     sumInfo <- .datasheets(x, project[[1]], scenario[[1]], core = TRUE)
+    
     if (nrow(sumInfo) == 0) {
       stop("No datasheets available")
     }
+    
     sumInfo$order <- seq(1, nrow(sumInfo))
+    
     if (is.null(name)) {
       name <- sumInfo$name
       allNames <- name
     }
+    
     missingSheets <- setdiff(name, sumInfo$name)
+    
     if (length(missingSheets) > 0) {
       sumInfo <- .datasheets(x, project[[1]], scenario[[1]], refresh = TRUE)
       missingSheets <- setdiff(name, sumInfo$name)
+      
       if (length(missingSheets) > 0) {
         stop(paste0("Datasheets not found: ", paste(missingSheets, collapse = ",")))
       }
     }
+    
     sumInfo <- subset(sumInfo, is.element(name, allNames))
   }
   
@@ -306,22 +331,30 @@ setMethod("datasheet",
   }
   
   if ((summary == TRUE) & !optional) {
+    
     sumInfo <- subset(sumInfo, select = c("scope", "name", "displayName", "order"))
     sumInfo[order(sumInfo$order), ]
     sumInfo$order <- NULL
+    sumInfo <- subset(sumInfo, scope == scopeDS)
+    
     return(sumInfo)
   }
   
   # Add data info - only for scenario scope datasheets if sid is defined
   if (summary == TRUE) {
+    
     # if no scenario scope sheets, return sumInfo without checking for data
     scnSheetSum <- sum(sumInfo$scope == "scenario")
     
     if (scnSheetSum == 0) {
+      
       sumInfo[order(sumInfo$order), ]
       sumInfo$order <- NULL
+      sumInfo <- subset(sumInfo, scope == scopeDS)
+      
       return(sumInfo)
     }
+    
     for (i in seq(length.out = length(sid))) {
       cSid <- sid[i]
       tt <- command(list(list = NULL, datasources = NULL, lib = .filepath(x), sid = cSid), session = session(x))
@@ -359,6 +392,8 @@ setMethod("datasheet",
     sumInfo <- subset(sumInfo, select = c(prevNames, setdiff(names(sumInfo), prevNames)))
     sumInfo <- sumInfo[order(sumInfo$order, sumInfo$scenario), ]
     sumInfo$order <- NULL
+    sumInfo <- subset(sumInfo, scope == scopeDS)
+    
     return(sumInfo)
   }
   
@@ -509,11 +544,11 @@ setMethod("datasheet",
               # Adding pid and sid because the sql query generated by the 
               # console does not include them
               if (nrow(sheet) > 0 & (length(pid)>1 | length(sid)>1)){
-                sheet$ScenarioID <- sid[id]
-                sheet$ProjectID <- pid[id]
+                sheet$ScenarioId <- sid[id]
+                sheet$ProjectId <- pid[id]
               } else if (length(sid) == 1 && returnScenarioInfo){
-                sheet$ScenarioID <- sid
-                sheet$ProjectID <- pid
+                sheet$ScenarioId <- sid
+                sheet$ProjectId <- pid
               }
               
               # Rearrange on the spot, making sure this is robust for Project-level
@@ -638,7 +673,7 @@ setMethod("datasheet",
       }
       
       if (!returnInvisible) {
-        sheetInfo <- subset(sheetInfo, is.element(visible, c("Yes")))
+        sheetInfo <- sheetInfo[sheetInfo$visible == "Yes",]
       }
       
       sheetInfo <- sheetInfo[order(sheetInfo$id), ]
@@ -824,17 +859,17 @@ setMethod("datasheet",
       } else {
         if (nrow(sheet) > 0) {
           allProjects <- .project(x)
-          names(allProjects) <- c("ProjectID", "ProjectName")
+          names(allProjects) <- c("ProjectId", "ProjectName")
           sheet <- merge(allProjects, sheet, all.y = TRUE)
         }
       }
     }
-    if (is.element("ScenarioID", names(sheet))) {
+    if (is.element("ScenarioId", names(sheet))) {
       if (length(sid) > 1){
         returnScenarioInfo <- TRUE
       }
       if (length(sid) == 1){
-        sheet$ScenarioID <- NULL
+        sheet$ScenarioId <- NULL
       }
       if (nrow(sheet) > 0 && returnScenarioInfo) {
         if (is(x, "SsimLibrary")){
@@ -843,22 +878,22 @@ setMethod("datasheet",
           lib <- .ssimLibrary(x)
         }
         allScns <- scenario(lib, summary = TRUE)
-        if (!is.element("ParentID", names(allScns))) {
-          warning("Missing ParentID info from scenario(summary=TRUE).")
-          allScns$ParentID <- NA
+        if (!is.element("ParentId", names(allScns))) {
+          warning("Missing ParentId info from scenario(summary=TRUE).")
+          allScns$ParentId <- NA
         }
-        allScns <- subset(allScns, select = c(ScenarioID, ProjectID, Name, ParentID))
-        allScns$ParentID <- suppressWarnings(as.numeric(allScns$ParentID))
-        parentNames <- subset(allScns, select = c(ScenarioID, Name))
-        names(parentNames) <- c("ParentID", "ParentName")
+        allScns <- subset(allScns, select = c(ScenarioId, ProjectId, Name, ParentId))
+        allScns$ParentId <- suppressWarnings(as.numeric(allScns$ParentId))
+        parentNames <- subset(allScns, select = c(ScenarioId, Name))
+        names(parentNames) <- c("ParentId", "ParentName")
         allScns <- merge(allScns, parentNames, all.x = T)
         
         allScns <- subset(allScns, select = c(ScenarioId, ProjectId, Name, ParentId, ParentName))
         
-        names(allScns) <- c("ScenarioID", "ProjectID", "ScenarioName", "ParentID", "ParentName")
-        allScns <- allScns[allScns$ScenarioID %in% sid,]
+        names(allScns) <- c("ScenarioId", "ProjectId", "ScenarioName", "ParentId", "ParentName")
+        allScns <- allScns[allScns$ScenarioId %in% sid,]
         
-        sheet <- subset(sheet , select=c(-ScenarioId))
+        sheet <- sheet[, !(names(sheet) %in% "ScenarioId")]
         sheet <- merge(allScns, sheet, all.y = TRUE)
       }
     }
